@@ -1,50 +1,56 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Settings, Maximize2, AlertCircle } from "lucide-react";
+import { Play, Pause, Settings, Maximize2, AlertCircle, Trash2 } from "lucide-react";
 import { useState } from "react";
-
-interface Camera {
-  id: string;
-  name: string;
-  location: string;
-  status: "online" | "offline" | "recording";
-  rtspUrl: string;
-  detections: number;
-}
-
-const mockCameras: Camera[] = [
-  { id: "1", name: "Front Entrance", location: "Building A", status: "online", rtspUrl: "rtsp://...", detections: 12 },
-  { id: "2", name: "Parking Lot", location: "Outdoor", status: "recording", rtspUrl: "rtsp://...", detections: 5 },
-  { id: "3", name: "Lobby", location: "Building A", status: "online", rtspUrl: "rtsp://...", detections: 8 },
-  { id: "4", name: "Server Room", location: "Building B", status: "online", rtspUrl: "rtsp://...", detections: 2 },
-  { id: "5", name: "Loading Dock", location: "Outdoor", status: "offline", rtspUrl: "rtsp://...", detections: 0 },
-  { id: "6", name: "Office Floor 2", location: "Building A", status: "online", rtspUrl: "rtsp://...", detections: 15 },
-];
+import { useCameras } from "@/hooks/useCameras";
 
 const CameraGrid = () => {
+  const { cameras, isLoading } = useCameras();
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="h-64 animate-pulse border-border/50 bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  if (cameras.length === 0) {
+    return (
+      <Card className="border-border/50 bg-card p-12 text-center">
+        <p className="text-muted-foreground">No cameras configured yet. Add your first camera to start monitoring.</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {mockCameras.map((camera) => (
+      {cameras.map((camera) => (
         <CameraCard key={camera.id} camera={camera} />
       ))}
     </div>
   );
 };
 
-const CameraCard = ({ camera }: { camera: Camera }) => {
+const CameraCard = ({ camera }: { camera: any }) => {
   const [isPlaying, setIsPlaying] = useState(true);
+  const { deleteCamera } = useCameras();
 
   const statusColors = {
     online: "bg-success",
     offline: "bg-destructive",
     recording: "bg-accent",
+    error: "bg-destructive",
   };
 
   const statusLabels = {
     online: "Online",
     offline: "Offline",
     recording: "Recording",
+    error: "Error",
   };
 
   return (
@@ -63,15 +69,6 @@ const CameraCard = ({ camera }: { camera: Camera }) => {
           </Badge>
         </div>
 
-        {/* Detection Count */}
-        {camera.detections > 0 && (
-          <div className="absolute right-3 top-3">
-            <Badge variant="destructive" className="bg-accent/90 text-accent-foreground backdrop-blur-sm">
-              {camera.detections} detections
-            </Badge>
-          </div>
-        )}
-
         {/* Controls Overlay */}
         <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
           <Button 
@@ -86,6 +83,13 @@ const CameraCard = ({ camera }: { camera: Camera }) => {
           </Button>
           <Button size="icon" variant="secondary">
             <Settings className="h-4 w-4" />
+          </Button>
+          <Button 
+            size="icon" 
+            variant="destructive"
+            onClick={() => deleteCamera(camera.id)}
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
 
@@ -104,8 +108,8 @@ const CameraCard = ({ camera }: { camera: Camera }) => {
       <div className="p-4">
         <h3 className="font-semibold text-foreground">{camera.name}</h3>
         <p className="text-sm text-muted-foreground">{camera.location}</p>
-        <div className="mt-2 text-xs text-muted-foreground">
-          RTSP: {camera.rtspUrl}
+        <div className="mt-2 text-xs text-muted-foreground truncate">
+          {camera.rtsp_url}
         </div>
       </div>
     </Card>

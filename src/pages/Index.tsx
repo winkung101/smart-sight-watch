@@ -30,17 +30,19 @@ const Index = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-primary shadow-glow hover:shadow-glow-accent"
-                onClick={() => navigate("/dashboard")}
+                onClick={() => navigate("/auth")}
               >
-                <Video className="mr-2 h-5 w-5" />
-                Launch Dashboard
+                <Shield className="mr-2 h-5 w-5" />
+                Get Started
               </Button>
               <Button 
                 size="lg" 
                 variant="outline"
                 className="border-primary/30 hover:bg-primary/10"
+                onClick={() => navigate("/dashboard")}
               >
-                View Documentation
+                <Video className="mr-2 h-5 w-5" />
+                View Dashboard
               </Button>
             </div>
           </div>

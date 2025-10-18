@@ -2,107 +2,88 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, User, Car, Clock, Eye } from "lucide-react";
-
-interface Event {
-  id: string;
-  type: "unknown_face" | "motion" | "object" | "face_match";
-  camera: string;
-  timestamp: string;
-  confidence: number;
-  details: string;
-  imageUrl?: string;
-}
-
-const mockEvents: Event[] = [
-  {
-    id: "1",
-    type: "unknown_face",
-    camera: "Front Entrance",
-    timestamp: "2 minutes ago",
-    confidence: 0.95,
-    details: "Unknown person detected at entrance",
-  },
-  {
-    id: "2",
-    type: "motion",
-    camera: "Parking Lot",
-    timestamp: "5 minutes ago",
-    confidence: 0.88,
-    details: "Significant motion detected in zone A",
-  },
-  {
-    id: "3",
-    type: "object",
-    camera: "Loading Dock",
-    timestamp: "12 minutes ago",
-    confidence: 0.92,
-    details: "Vehicle detected: Delivery truck",
-  },
-  {
-    id: "4",
-    type: "face_match",
-    camera: "Lobby",
-    timestamp: "15 minutes ago",
-    confidence: 0.97,
-    details: "Employee: John Doe verified",
-  },
-  {
-    id: "5",
-    type: "unknown_face",
-    camera: "Office Floor 2",
-    timestamp: "22 minutes ago",
-    confidence: 0.91,
-    details: "Unknown person detected",
-  },
-];
+import { useEvents } from "@/hooks/useEvents";
+import { formatDistanceToNow } from "date-fns";
 
 const EventFeed = () => {
+  const { events, isLoading } = useEvents();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="h-32 animate-pulse border-border/50 bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  if (events.length === 0) {
+    return (
+      <Card className="border-border/50 bg-card p-12 text-center">
+        <p className="text-muted-foreground">No events detected yet. Events will appear here in real-time.</p>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {mockEvents.map((event) => (
+      {events.map((event) => (
         <EventCard key={event.id} event={event} />
       ))}
     </div>
   );
 };
 
-const EventCard = ({ event }: { event: Event }) => {
+const EventCard = ({ event }: { event: any }) => {
   const eventIcons = {
-    unknown_face: <AlertTriangle className="h-5 w-5 text-destructive" />,
+    face_unknown: <AlertTriangle className="h-5 w-5 text-destructive" />,
     motion: <Eye className="h-5 w-5 text-accent" />,
-    object: <Car className="h-5 w-5 text-primary" />,
-    face_match: <User className="h-5 w-5 text-success" />,
+    object_detected: <Car className="h-5 w-5 text-primary" />,
+    face_matched: <User className="h-5 w-5 text-success" />,
+    face_detected: <User className="h-5 w-5 text-primary" />,
   };
 
   const eventColors = {
-    unknown_face: "border-destructive/50 bg-destructive/5",
+    face_unknown: "border-destructive/50 bg-destructive/5",
     motion: "border-accent/50 bg-accent/5",
-    object: "border-primary/50 bg-primary/5",
-    face_match: "border-success/50 bg-success/5",
+    object_detected: "border-primary/50 bg-primary/5",
+    face_matched: "border-success/50 bg-success/5",
+    face_detected: "border-primary/50 bg-primary/5",
   };
 
   const confidenceColor = event.confidence > 0.9 ? "text-success" : event.confidence > 0.8 ? "text-accent" : "text-destructive";
 
+  const timeAgo = formatDistanceToNow(new Date(event.created_at), { addSuffix: true });
+
   return (
-    <Card className={`border p-4 transition-all hover:shadow-lg ${eventColors[event.type]}`}>
+    <Card className={`border p-4 transition-all hover:shadow-lg ${eventColors[event.event_type]}`}>
       <div className="flex items-start gap-4">
         {/* Icon */}
         <div className="rounded-lg bg-card p-3">
-          {eventIcons[event.type]}
+          {eventIcons[event.event_type]}
         </div>
 
         {/* Content */}
         <div className="flex-1">
           <div className="mb-1 flex items-start justify-between">
             <div>
-              <h3 className="font-semibold text-foreground">{event.details}</h3>
+              <h3 className="font-semibold text-foreground capitalize">
+                {event.event_type.replace(/_/g, " ")}
+              </h3>
               <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {event.timestamp}
+                  {timeAgo}
                 </span>
                 <span>•</span>
-                <span>{event.camera}</span>
+                <span>{event.cameras.name}</span>
+                {event.cameras.location && (
+                  <>
+                    <span>•</span>
+                    <span>{event.cameras.location}</span>
+                  </>
+                )}
               </div>
             </div>
             <Badge 
@@ -114,15 +95,15 @@ const EventCard = ({ event }: { event: Event }) => {
           </div>
 
           {/* Thumbnail */}
-          {event.imageUrl && (
+          {event.image_url && (
             <div className="mt-3 h-32 w-full rounded-lg bg-muted" />
           )}
 
           {/* Actions */}
           <div className="mt-3 flex gap-2">
             <Button size="sm" variant="outline">View Details</Button>
-            <Button size="sm" variant="outline">Download</Button>
-            {event.type === "unknown_face" && (
+            {event.image_url && <Button size="sm" variant="outline">Download</Button>}
+            {event.event_type === "face_unknown" && (
               <Button size="sm" variant="default" className="bg-gradient-primary">
                 Enroll Face
               </Button>

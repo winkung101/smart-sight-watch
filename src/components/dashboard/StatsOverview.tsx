@@ -1,33 +1,44 @@
 import { Card } from "@/components/ui/card";
 import { Video, AlertTriangle, CheckCircle2, Users } from "lucide-react";
+import { useCameras } from "@/hooks/useCameras";
+import { useEvents } from "@/hooks/useEvents";
 
 const StatsOverview = () => {
+  const { cameras } = useCameras();
+  const { events } = useEvents();
+
+  const activeCameras = cameras.filter(c => c.status === "online" || c.status === "recording").length;
+  const recordingCameras = cameras.filter(c => c.status === "recording").length;
+  const todayEvents = events.length;
+  const verifiedFaces = events.filter(e => e.event_type === "face_matched").length;
+  const unknownAlerts = events.filter(e => e.event_type === "face_unknown").length;
+
   const stats = [
     {
       label: "Active Cameras",
-      value: "6",
-      subtext: "2 recording",
+      value: activeCameras.toString(),
+      subtext: `${recordingCameras} recording`,
       icon: <Video className="h-6 w-6 text-primary" />,
       color: "from-primary/20 to-primary/5",
     },
     {
       label: "Detections Today",
-      value: "42",
-      subtext: "+12% from yesterday",
+      value: todayEvents.toString(),
+      subtext: "Real-time monitoring",
       icon: <AlertTriangle className="h-6 w-6 text-accent" />,
       color: "from-accent/20 to-accent/5",
     },
     {
       label: "Verified Faces",
-      value: "28",
-      subtext: "Database size: 156",
+      value: verifiedFaces.toString(),
+      subtext: "Successful matches",
       icon: <CheckCircle2 className="h-6 w-6 text-success" />,
       color: "from-success/20 to-success/5",
     },
     {
       label: "Unknown Alerts",
-      value: "3",
-      subtext: "Requires attention",
+      value: unknownAlerts.toString(),
+      subtext: unknownAlerts > 0 ? "Requires attention" : "All clear",
       icon: <Users className="h-6 w-6 text-destructive" />,
       color: "from-destructive/20 to-destructive/5",
     },
